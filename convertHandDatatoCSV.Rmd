@@ -1,0 +1,76 @@
+---
+title: "convertHandDatatoCSV"
+author: "Alex"
+date: "6/2021"
+output: html_document
+---
+
+``` {r}
+
+library(tidyverse)
+library(dddr)
+library(cowplot)
+library(rgl)
+library(devout)
+library(devoutrgl)
+library(snowcrash)
+library(triangular)
+library(ggrgl)
+library(ggplot2)
+library(dplyr)
+library(gapminder)
+library(cryogenic)
+```
+
+``` {r}
+
+#be careful to format your input folder correctly with "fileName" 
+#so that it matches up with the fileName and can find the file 
+#then be cautious to output in the right place through "fileLocation" 
+
+#call script by calling 
+#filterfile("becomingHomelessData/PARTICIPANT_5_TRACKING_FILE.csv", "C:\\Users\\alexl\\Downloads\\pData5.csv") 
+
+filterfile <- function(fileName, fileLocation) {
+  #fileName <- paste0("becomingHomelessData/PARTICIPANT_", as.character(participantNum), "_TRACKING_FILE.csv")
+  file <- read_csv(fileName, col_types = list(col_character(), col_character(), col_character(), 
+                                               col_character(), col_character(), col_character(), 
+                                               col_character(), col_character(), col_character(), 
+                                               col_character(), col_character(), col_character(), 
+                                               col_character(), col_character(), col_character(), 
+                                               col_character(), col_character()))
+  
+  set_dddr_semantics(axes = semantics_axes(y = "up", z = "forward", hand = "left"))
+  
+  file <- file %>%
+    mutate(
+      across(
+        contains("POS"),
+        ~(as_vector3(..1, regex = "\\[(.*), (.*), (.*)\\]"))
+      ),
+      TIMESTAMP = TIMESTAMP %>% 
+        stringi::stri_replace_last(".", fixed="-") %>%
+        lubridate::parse_date_time("YmdHMOS"), 
+      CONTROLLER_1_POS_GLB = CONTROLLER_1_POS_GLB, 
+      CONTROLLER_2_POS_GLB = CONTROLLER_2_POS_GLB, 
+      x1 = CONTROLLER_1_POS_GLB$x, 
+      y1 = CONTROLLER_1_POS_GLB$y, 
+      z1 = CONTROLLER_1_POS_GLB$z, 
+      x2 = CONTROLLER_2_POS_GLB$x, 
+      y2 = CONTROLLER_2_POS_GLB$y, 
+      z2 = CONTROLLER_2_POS_GLB$z, 
+      entry = row_number()
+      #participant_num = row_number()
+    )
+  
+    file <- file %>% select(x1, y1, z1, x2, y2, z2, entry, TIMESTAMP)
+  
+  #fileLocation <- "C:\\Users\\alexl\\Downloads\\pData" %>% paste0(participantNum, ".csv")
+  
+  write.csv(file, fileLocation, row.names = FALSE)
+  
+  return(file)
+}
+
+
+```
